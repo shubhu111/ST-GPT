@@ -37,7 +37,7 @@
 * **LLM:** Google Gemini (2.5 Flash & Flash-Lite)
 * **Framework:** LangChain
 * **Vector Database:** FAISS (In-Memory)
-* **Embedding Model:** `models/embedding-001`
+* **Embedding Model:** `gemini-embedding-001`
 
 ---
 
