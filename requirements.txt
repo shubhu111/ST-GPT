@@ -7,4 +7,6 @@ langchain-community
 faiss-cpu
 youtube-transcript-api
 pypdf
+
 langchain-classic
+langchain-groq
