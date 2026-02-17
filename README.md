@@ -15,7 +15,7 @@
 * A conversational chatbot acting as a supportive friend and tutor.
 * **Memory Enabled:** Remembers your conversation context.
 * **Persona:** Friendly, empathetic, and capable of teaching coding/math concepts.
-* **Powered by:** `gemini-2.5-flash-lite` for fast responses.
+* **Powered by:** `Llama-3.3-70B-Instruct` for fast responses.
 
 ### 2. 📹 Chat with YouTube (RAG)
 * **Input:** Paste any YouTube video URL.
