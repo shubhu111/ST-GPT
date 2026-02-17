@@ -34,7 +34,7 @@
 ## 🛠️ Tech Stack
 
 * **Frontend:** Streamlit
-* **LLM:** Google Gemini (2.5 Flash & Flash-Lite)
+* **LLM:** Llama 3.3-70B-Instruct (Groq), Google Gemini Flash
 * **Framework:** LangChain
 * **Vector Database:** FAISS (In-Memory)
 * **Embedding Model:** `gemini-embedding-001`
