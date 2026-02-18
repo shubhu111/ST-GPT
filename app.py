@@ -170,14 +170,14 @@ elif option == "📹 Chat with YouTube":
                     
                     # 2. Fetch Transcript (Must use get_transcript for cookies)
                     # We switch to get_transcript because .fetch() DOES NOT support cookies
-                    transcript_data = YouTubeTranscriptApi.get_transcript(
+                    transcript_data = YouTubeTranscriptApi.fetch(
                         video_id_input, 
                         languages=['en', 'hi'],
                         cookies=cookie_file_path
                     )
                     
                     # 3. Process Text (Handling the Dictionary format from get_transcript)
-                    full_text = " ".join(item['text'] for item in transcript_data)
+                    full_text = " ".join(item.text for item in transcript_data)
 
                     # --- B. SPLIT TEXT ---
                     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
@@ -396,6 +396,7 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
+
 
 
 
