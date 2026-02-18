@@ -161,21 +161,22 @@ elif option == "📹 Chat with YouTube":
                     # --- A. COOKIE AUTHENTICATION & FETCH TRANSCRIPT ---
                     cookie_file_path = None
                     
-                    # 1. Check if cookies exist in Secrets to bypass IP blocking
+                    # 1. Check if cookies exist in Secrets
                     if "YOUTUBE_COOKIES" in st.secrets:
+                        # Create a temp file for the cookies
                         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
                             f.write(st.secrets["YOUTUBE_COOKIES"])
                             cookie_file_path = f.name
                     
-                    # 2. Fetch Transcript (Using standard static method with cookies)
-                    api = YouTubeTranscriptApi()
-                    transcript_data = api.fetch(
-                        video_id_input, 
+                    # 2. Fetch Transcript (Using YOUR syntax with Cookie injection)
+                    # We pass 'cookies' to your .fetch() method assuming it supports it
+                    transcript_data = YouTubeTranscriptApi().fetch(
+                        video_id=video_id_input, 
                         languages=['en', 'hi'],
-                        cookies=cookie_file_path
+                        cookies=cookie_file_path  # <--- INJECTED COOKIES HERE
                     )
                     
-                    # Note: get_transcript returns a list of dicts, so we use item['text']
+                    # Using YOUR object access (.text) instead of dict access
                     full_text = " ".join(item.text for item in transcript_data)
 
                     # --- B. SPLIT TEXT ---
@@ -184,31 +185,26 @@ elif option == "📹 Chat with YouTube":
 
                     st.write(f"ℹ️ Processing {len(chunks)} text chunks...")
 
-                    # --- C. CREATE VECTOR STORE WITH BATCHING (Your Anti-RPM Logic) ---
-                    embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
+                    # --- C. CREATE VECTOR STORE WITH BATCHING ---
+                    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
                     
-                    # 1. Start with the first batch to initialize the vector store
-                    batch_size = 5  # Small batch size to stay under rate limits
+                    # 1. Start with the first batch
+                    batch_size = 5
                     vector_store = FAISS.from_documents(chunks[:batch_size], embeddings)
                     time.sleep(1) 
                     
-                    # 2. Add the rest in a loop with delays
+                    # 2. Add the rest in a loop
                     progress_bar = st.progress(0)
                     total_chunks = len(chunks)
                     
                     for i in range(batch_size, total_chunks, batch_size):
-                        # Grab the next slice of 5 chunks
                         batch = chunks[i : i + batch_size]
-                        
-                        # Add to the existing store
                         vector_store.add_documents(batch)
                         
-                        # Update progress bar
                         current_progress = min((i + batch_size) / total_chunks, 1.0)
                         progress_bar.progress(current_progress)
                         
-                        # CRITICAL: Pause for 2 seconds between batches to avoid 429 Error
-                        time.sleep(2)
+                        time.sleep(2) # Anti-Rate Limit Delay
 
                     progress_bar.empty() 
 
@@ -220,8 +216,9 @@ elif option == "📹 Chat with YouTube":
                     st.error("Transcripts are disabled for this video.")
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
-                    if "cookies" not in str(e).lower() and "YOUTUBE_COOKIES" not in st.secrets:
-                        st.warning("💡 Tip: If you are seeing an IP block error on the Cloud, make sure you have added 'YOUTUBE_COOKIES' to your Streamlit Secrets.")
+                    # Clean up temp file if it exists
+                    if cookie_file_path and os.path.exists(cookie_file_path):
+                        os.remove(cookie_file_path)
 
     # Chat Interface (Only shows if video is processed)
     if "vector_store" in st.session_state:
@@ -400,6 +397,7 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
+
 
 
 
