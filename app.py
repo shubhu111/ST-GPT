@@ -168,7 +168,7 @@ elif option == "📹 Chat with YouTube":
                             cookie_file_path = f.name
                     
                     # 2. Fetch Transcript (Using standard static method with cookies)
-                    transcript_data = YouTubeTranscriptApi.get_transcript(
+                    transcript_data = YouTubeTranscriptApi.fetch(
                         video_id_input, 
                         languages=['en', 'hi'],
                         cookies=cookie_file_path
@@ -399,4 +399,5 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
+
 
