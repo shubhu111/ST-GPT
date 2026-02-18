@@ -158,24 +158,39 @@ elif option == "📹 Chat with YouTube":
         if video_id_input:
             with st.spinner("Fetching Transcript & Creating Embeddings... (This may take a minute for long videos)"):
                 try:
-                    # A. Fetch Transcript
-                    # (Note: Using the new object-oriented fetch method)
-                    transcript_data = YouTubeTranscriptApi().fetch(video_id=video_id_input, languages=['en', 'hi'])
-                    full_text = " ".join(item.text for item in transcript_data)
+                    # --- A. COOKIE AUTHENTICATION & FETCH TRANSCRIPT ---
+                    cookie_file_path = None
+                    
+                    # 1. Check if cookies exist in Secrets to bypass IP blocking
+                    if "YOUTUBE_COOKIES" in st.secrets:
+                        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
+                            f.write(st.secrets["YOUTUBE_COOKIES"])
+                            cookie_file_path = f.name
+                    
+                    # 2. Fetch Transcript (Using standard static method with cookies)
+                    transcript_data = YouTubeTranscriptApi.get_transcript(
+                        video_id_input, 
+                        languages=['en', 'hi'],
+                        cookies=cookie_file_path
+                    )
+                    
+                    # Note: get_transcript returns a list of dicts, so we use item['text']
+                    full_text = " ".join(item['text'] for item in transcript_data)
 
-                    # B. Split Text
+                    # --- B. SPLIT TEXT ---
                     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
                     chunks = text_splitter.create_documents([full_text])
 
                     st.write(f"ℹ️ Processing {len(chunks)} text chunks...")
 
-                    # C. Create Vector Store with BATCHING 
-                    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+                    # --- C. CREATE VECTOR STORE WITH BATCHING (Your Anti-RPM Logic) ---
+                    embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
                     
                     # 1. Start with the first batch to initialize the vector store
                     batch_size = 5  # Small batch size to stay under rate limits
                     vector_store = FAISS.from_documents(chunks[:batch_size], embeddings)
                     time.sleep(1) 
+                    
                     # 2. Add the rest in a loop with delays
                     progress_bar = st.progress(0)
                     total_chunks = len(chunks)
@@ -196,14 +211,16 @@ elif option == "📹 Chat with YouTube":
 
                     progress_bar.empty() 
 
-                    # D. Save to Session State
+                    # --- D. SAVE TO SESSION STATE ---
                     st.session_state.vector_store = vector_store
-                    st.success("Video Processed Successfully! Ask your questions below.")
+                    st.success("✅ Video Processed Successfully! Ask your questions below.")
 
                 except TranscriptsDisabled:
                     st.error("Transcripts are disabled for this video.")
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
+                    if "cookies" not in str(e).lower() and "YOUTUBE_COOKIES" not in st.secrets:
+                        st.warning("💡 Tip: If you are seeing an IP block error on the Cloud, make sure you have added 'YOUTUBE_COOKIES' to your Streamlit Secrets.")
 
     # Chat Interface (Only shows if video is processed)
     if "vector_store" in st.session_state:
@@ -382,3 +399,4 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
+
