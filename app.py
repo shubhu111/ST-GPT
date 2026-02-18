@@ -146,34 +146,59 @@ if option == "🤖 AI Buddy (ChatBot)":
         # 4. Save AI Message
         st.session_state.chat_history.append({"role": "assistant", "content": response})
 
-
 # 2. CHAT WITH YOUTUBE (RAG)
 elif option == "📹 Chat with YouTube":
     st.title("📹 Chat with YouTube Videos")
     
     # Input Section
-    video_id = st.text_input("Enter YouTube Video ID (e.g., 'dQw4w9WgXcQ'):")
+    video_id_input = st.text_input("Enter YouTube Video ID (e.g., 'dQw4w9WgXcQ'):")
     
     # Process Video Button
     if st.button("Analyze Video"):
-        if video_id:
-            with st.spinner("Getting Transcript & Creating Embeddings..."):
+        if video_id_input:
+            with st.spinner("Fetching Transcript & Creating Embeddings... (This may take a minute for long videos)"):
                 try:
                     # A. Fetch Transcript
-                    transcript_data = YouTubeTranscriptApi().fetch(video_id, languages=['en', 'hi'])
-                    transcript = " ".join(item.text for item in transcript_data)
+                    # (Note: Using the new object-oriented fetch method)
+                    transcript_data = YouTubeTranscriptApi().fetch(video_id=video_id_input, languages=['en', 'hi'])
+                    full_text = " ".join(item.text for item in transcript_data)
 
                     # B. Split Text
-                    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
-                    chunks = splitter.create_documents([transcript])
+                    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
+                    chunks = text_splitter.create_documents([full_text])
 
-                    # C. Create Vector Store (FAISS)
-                    embed_model = GoogleGenerativeAIEmbeddings(model='gemini-embedding-001')
-                    vector_store = FAISS.from_documents(documents=chunks, embedding=embed_model)
+                    st.write(f"ℹ️ Processing {len(chunks)} text chunks...")
+
+                    # C. Create Vector Store with BATCHING 
+                    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
                     
+                    # 1. Start with the first batch to initialize the vector store
+                    batch_size = 5  # Small batch size to stay under rate limits
+                    vector_store = FAISS.from_documents(chunks[:batch_size], embeddings)
+                    time.sleep(1) 
+                    # 2. Add the rest in a loop with delays
+                    progress_bar = st.progress(0)
+                    total_chunks = len(chunks)
+                    
+                    for i in range(batch_size, total_chunks, batch_size):
+                        # Grab the next slice of 5 chunks
+                        batch = chunks[i : i + batch_size]
+                        
+                        # Add to the existing store
+                        vector_store.add_documents(batch)
+                        
+                        # Update progress bar
+                        current_progress = min((i + batch_size) / total_chunks, 1.0)
+                        progress_bar.progress(current_progress)
+                        
+                        # CRITICAL: Pause for 2 seconds between batches to avoid 429 Error
+                        time.sleep(2)
+
+                    progress_bar.empty() 
+
                     # D. Save to Session State
                     st.session_state.vector_store = vector_store
-                    st.success("Video Processed! You can now ask questions below.")
+                    st.success("Video Processed Successfully! Ask your questions below.")
 
                 except TranscriptsDisabled:
                     st.error("Transcripts are disabled for this video.")
@@ -355,4 +380,5 @@ st.sidebar.markdown(
 )
 
 st.sidebar.markdown("---")
+
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
