@@ -176,7 +176,7 @@ elif option == "📹 Chat with YouTube":
                     )
                     
                     # Note: get_transcript returns a list of dicts, so we use item['text']
-                    full_text = " ".join(item['text'] for item in transcript_data)
+                    full_text = " ".join(item.text for item in transcript_data)
 
                     # --- B. SPLIT TEXT ---
                     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
@@ -400,6 +400,7 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
+
 
 
 
