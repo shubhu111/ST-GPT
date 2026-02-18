@@ -168,16 +168,16 @@ elif option == "📹 Chat with YouTube":
                             f.write(st.secrets["YOUTUBE_COOKIES"])
                             cookie_file_path = f.name
                     
-                    # 2. Fetch Transcript (Using YOUR syntax with Cookie injection)
-                    # We pass 'cookies' to your .fetch() method assuming it supports it
-                    transcript_data = YouTubeTranscriptApi().fetch(
-                        video_id=video_id_input, 
+                    # 2. Fetch Transcript (Must use get_transcript for cookies)
+                    # We switch to get_transcript because .fetch() DOES NOT support cookies
+                    transcript_data = YouTubeTranscriptApi.get_transcript(
+                        video_id_input, 
                         languages=['en', 'hi'],
-                        cookies=cookie_file_path  # <--- INJECTED COOKIES HERE
+                        cookies=cookie_file_path
                     )
                     
-                    # Using YOUR object access (.text) instead of dict access
-                    full_text = " ".join(item.text for item in transcript_data)
+                    # 3. Process Text (Handling the Dictionary format from get_transcript)
+                    full_text = " ".join(item['text'] for item in transcript_data)
 
                     # --- B. SPLIT TEXT ---
                     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
@@ -219,7 +219,6 @@ elif option == "📹 Chat with YouTube":
                     # Clean up temp file if it exists
                     if cookie_file_path and os.path.exists(cookie_file_path):
                         os.remove(cookie_file_path)
-
     # Chat Interface (Only shows if video is processed)
     if "vector_store" in st.session_state:
         st.divider()
@@ -397,6 +396,7 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
+
 
 
 
