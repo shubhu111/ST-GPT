@@ -145,7 +145,6 @@ if option == "🤖 AI Buddy (ChatBot)":
         
         # 4. Save AI Message
         st.session_state.chat_history.append({"role": "assistant", "content": response})
-
 # 2. CHAT WITH YOUTUBE (RAG)
 elif option == "📹 Chat with YouTube":
     st.title("📹 Chat with YouTube Videos")
@@ -163,21 +162,25 @@ elif option == "📹 Chat with YouTube":
                     
                     # 1. Check if cookies exist in Secrets
                     if "YOUTUBE_COOKIES" in st.secrets:
-                        # Create a temp file for the cookies
                         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
                             f.write(st.secrets["YOUTUBE_COOKIES"])
                             cookie_file_path = f.name
                     
-                    # 2. Get Transcript List (Pass Cookies HERE, not in fetch)
-                    # We use list_transcripts to authenticate, then fetch the specific language
+                    # 2. AUTHENTICATE FIRST (Pass Cookies HERE)
+                    # This is the ONLY way to make cookies work with the .fetch() flow
                     transcript_list = YouTubeTranscriptApi.list_transcripts(
                         video_id_input, 
-                        cookies=cookie_file_path
+                        cookies=cookie_file_path 
                     )
                     
-                    # 3. Find the right language and Fetch
-                    # Tries English first, then Hindi, or translates if needed
-                    transcript = transcript_list.find_transcript(['en', 'hi'])
+                    # 3. NOW FETCH (Find English/Hindi and get text)
+                    # We try to find a manually created transcript first, or a generated one
+                    try:
+                        transcript = transcript_list.find_transcript(['en', 'hi'])
+                    except:
+                        # Fallback: Just get the first available transcript
+                        transcript = transcript_list.find_generated_transcript(['en', 'hi'])
+                        
                     transcript_data = transcript.fetch()
                     
                     # 4. Process Text (Standard dictionary access)
@@ -400,6 +403,7 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
+
 
 
 
