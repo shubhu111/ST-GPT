@@ -168,16 +168,20 @@ elif option == "📹 Chat with YouTube":
                             f.write(st.secrets["YOUTUBE_COOKIES"])
                             cookie_file_path = f.name
                     
-                    # 2. Fetch Transcript (Must use get_transcript for cookies)
-                    # We switch to get_transcript because .fetch() DOES NOT support cookies
-                    transcript_data = YouTubeTranscriptApi.fetch(
+                    # 2. Get Transcript List (Pass Cookies HERE, not in fetch)
+                    # We use list_transcripts to authenticate, then fetch the specific language
+                    transcript_list = YouTubeTranscriptApi.list_transcripts(
                         video_id_input, 
-                        languages=['en', 'hi'],
                         cookies=cookie_file_path
                     )
                     
-                    # 3. Process Text (Handling the Dictionary format from get_transcript)
-                    full_text = " ".join(item.text for item in transcript_data)
+                    # 3. Find the right language and Fetch
+                    # Tries English first, then Hindi, or translates if needed
+                    transcript = transcript_list.find_transcript(['en', 'hi'])
+                    transcript_data = transcript.fetch()
+                    
+                    # 4. Process Text (Standard dictionary access)
+                    full_text = " ".join(item['text'] for item in transcript_data)
 
                     # --- B. SPLIT TEXT ---
                     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
@@ -396,6 +400,7 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
+
 
 
 
