@@ -175,7 +175,7 @@ elif option == "📹 Chat with YouTube":
                     st.write(f"ℹ️ Processing {len(chunks)} text chunks...")
 
                     # C. Create Vector Store with BATCHING (The Fix for 429 Errors)
-                    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+                    embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
                     
                     # 1. Start with the first batch to initialize the vector store
                     batch_size = 5  # Small batch size to stay under rate limits
@@ -391,6 +391,7 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
+
 
 
 
