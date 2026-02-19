@@ -157,75 +157,63 @@ elif option == "📹 Chat with YouTube":
         if video_id_input:
             with st.spinner("Fetching Transcript & Creating Embeddings... (This may take a minute for long videos)"):
                 try:
-                    # --- A. COOKIE AUTHENTICATION & FETCH TRANSCRIPT ---
-                    cookie_file_path = None
-                    
-                    # 1. Check if cookies exist in Secrets
-                    if "YOUTUBE_COOKIES" in st.secrets:
-                        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
-                            f.write(st.secrets["YOUTUBE_COOKIES"])
-                            cookie_file_path = f.name
-                    
-                    # 2. AUTHENTICATE FIRST (Pass Cookies HERE)
-                    # This is the ONLY way to make cookies work with the .fetch() flow
-                    transcript_list = YouTubeTranscriptApi.list_transcripts(
-                        video_id_input, 
-                        cookies=cookie_file_path 
-                    )
-                    
-                    # 3. NOW FETCH (Find English/Hindi and get text)
-                    # We try to find a manually created transcript first, or a generated one
-                    try:
-                        transcript = transcript_list.find_transcript(['en', 'hi'])
-                    except:
-                        # Fallback: Just get the first available transcript
-                        transcript = transcript_list.find_generated_transcript(['en', 'hi'])
-                        
-                    transcript_data = transcript.fetch()
-                    
-                    # 4. Process Text (Standard dictionary access)
-                    full_text = " ".join(item['text'] for item in transcript_data)
+                    # --- INVISIBLE PROXY INJECTION ---
+                    # This hides the Streamlit Cloud IP without changing your syntax
+                    if "PROXY_URL" in st.secrets:
+                        os.environ["http_proxy"] = st.secrets["PROXY_URL"]
+                        os.environ["https_proxy"] = st.secrets["PROXY_URL"]
 
-                    # --- B. SPLIT TEXT ---
+                    # A. Fetch Transcript
+                    # (Note: Using the new object-oriented fetch method)
+                    transcript_data = YouTubeTranscriptApi().fetch(video_id=video_id_input, languages=['en', 'hi'])
+                    full_text = " ".join(item.text for item in transcript_data)
+
+                    # B. Split Text
                     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
                     chunks = text_splitter.create_documents([full_text])
 
                     st.write(f"ℹ️ Processing {len(chunks)} text chunks...")
 
-                    # --- C. CREATE VECTOR STORE WITH BATCHING ---
+                    # C. Create Vector Store with BATCHING (The Fix for 429 Errors)
                     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
                     
-                    # 1. Start with the first batch
-                    batch_size = 5
+                    # 1. Start with the first batch to initialize the vector store
+                    batch_size = 5  # Small batch size to stay under rate limits
                     vector_store = FAISS.from_documents(chunks[:batch_size], embeddings)
-                    time.sleep(1) 
-                    
-                    # 2. Add the rest in a loop
+                    time.sleep(1) # Pause to be safe
+
+                    # 2. Add the rest in a loop with delays
                     progress_bar = st.progress(0)
                     total_chunks = len(chunks)
                     
                     for i in range(batch_size, total_chunks, batch_size):
+                        # Grab the next slice of 5 chunks
                         batch = chunks[i : i + batch_size]
+                        
+                        # Add to the existing store
                         vector_store.add_documents(batch)
                         
+                        # Update progress bar
                         current_progress = min((i + batch_size) / total_chunks, 1.0)
                         progress_bar.progress(current_progress)
                         
-                        time.sleep(2) # Anti-Rate Limit Delay
+                        # CRITICAL: Pause for 2 seconds between batches to avoid 429 Error
+                        time.sleep(2)
 
-                    progress_bar.empty() 
+                    progress_bar.empty() # Hide bar when done
 
-                    # --- D. SAVE TO SESSION STATE ---
+                    # D. Save to Session State
                     st.session_state.vector_store = vector_store
-                    st.success("✅ Video Processed Successfully! Ask your questions below.")
+                    st.success("Video Processed Successfully! Ask your questions below.")
 
                 except TranscriptsDisabled:
                     st.error("Transcripts are disabled for this video.")
                 except Exception as e:
-                    st.error(f"An error occurred: {e}")
-                    # Clean up temp file if it exists
-                    if cookie_file_path and os.path.exists(cookie_file_path):
-                        os.remove(cookie_file_path)
+                    # Added a clean fallback message for recruiters just in case the proxy fails
+                    if "YouTube is blocking requests" in str(e):
+                        st.warning("⚠️ **Cloud Restriction:** YouTube is currently blocking live cloud requests. Please try the **Chat with PDF** feature, or check my LinkedIn for a video demo!")
+                    else:
+                        st.error(f"An error occurred: {e}")
     # Chat Interface (Only shows if video is processed)
     if "vector_store" in st.session_state:
         st.divider()
@@ -403,6 +391,7 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
+
 
 
 
