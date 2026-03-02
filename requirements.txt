@@ -10,3 +10,12 @@ pypdf
 
 langchain-classic
 langchain-groq
+
+duckduckgo-search
+ddgs4
+wikipedia 
+arxiv 
+yfinance
+youtube-search-python
+requests
+beautifulsoup4
