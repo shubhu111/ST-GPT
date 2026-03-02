@@ -22,6 +22,9 @@ arxiv
 yfinance
 youtube-search-python
 
+youtube-search
+
 beautifulsoup4
 requests
 pytz
+
