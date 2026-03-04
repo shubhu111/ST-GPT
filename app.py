@@ -134,8 +134,8 @@ if option == "🤖 AI Buddy (ChatBot)":
         with st.chat_message("assistant"):
             
             # llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.6)
-            # llm = ChatGroq(model='llama-3.3-70b-versatile',temperature=0.4)
-            llm = ChatGroq(model='openai/gpt-oss-120b',temperature=0.4)
+            llm = ChatGroq(model='llama-3.3-70b-versatile',temperature=0.4)
+            # llm = ChatGroq(model='openai/gpt-oss-120b',temperature=0.4)
             
             # Pass the WHOLE history to enabling memory
             response_stream = llm.stream(history_for_llm)
@@ -392,6 +392,7 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 st.sidebar.caption("© 2026 Shubham Tade | AI Engineer")
+
 
 
 
